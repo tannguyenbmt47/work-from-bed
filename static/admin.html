@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work From Bed</title>
+<link rel="icon" href="/s/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/s/admin.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brand">
+    <img src="/s/icon.svg" alt="">
+    <div><h1>Work From Bed</h1><p>Bảng điều khiển trên laptop</p></div>
+  </div>
+  <div class="pill" id="status"><span class="dot"></span><span id="status-text">Đang tải…</span></div>
+</header>
+
+<main class="grid">
+  <section class="card connect" aria-labelledby="h-connect">
+    <h2 id="h-connect">Kết nối điện thoại</h2>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="qr"><img id="qr" alt="Mã QR để mở Work From Bed trên điện thoại"></div>
+    <ol class="steps" id="steps"></ol>
+
+    <div class="field">
+      <span class="label">Địa chỉ</span>
+      <div class="copyrow"><code id="url"></code><button class="btn icon" data-copy="url" title="Sao chép địa chỉ" aria-label="Sao chép địa chỉ"><svg class="i"><use href="#i-copy"/></svg></button></div>
+    </div>
+    <div class="field">
+      <span class="label">Mã kết nối <small>nếu cần gõ tay trên điện thoại</small></span>
+      <div class="copyrow"><code id="token" class="token"></code><button class="btn icon" data-copy="token" title="Sao chép mã" aria-label="Sao chép mã"><svg class="i"><use href="#i-copy"/></svg></button></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="new-token"><svg class="i"><use href="#i-refresh"/></svg>Đổi mã kết nối</button>
+      <a class="btn" id="try-local" target="_blank" rel="noopener"><svg class="i"><use href="#i-external"/></svg>Mở thử trên laptop này</a>
+    </div>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-clients">
+      <h2 id="h-clients">Điện thoại đang kết nối <span class="count" id="client-count">0</span></h2>
+      <ul class="clients" id="clients"></ul>
+      <p class="empty" id="clients-empty">Chưa có điện thoại nào kết nối. Quét mã QR bên cạnh để bắt đầu.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-settings">
+      <h2 id="h-settings">Cài đặt</h2>
+      <label class="setting" id="autostart-row">
+        <span><b>Tự chạy khi đăng nhập</b><small>Bật laptop lên là điện thoại kết nối được ngay, không cần mở terminal.</small></span>
+        <input type="checkbox" class="switch" id="autostart">
+      </label>
+      <div class="setting" id="menu-row">
+        <span><b>Biểu tượng trong menu ứng dụng</b><small>Tìm "Work From Bed" trong menu để mở, như các ứng dụng khác.</small></span>
+        <button class="btn" id="menu">Thêm vào menu</button>
+      </div>
+      <p class="note" id="docker-note" hidden>Đang chạy trong Docker. Bật tự chạy khi đăng nhập bằng lệnh <code>./docker.sh autostart on</code>.</p>
+      <div class="setting">
+        <span><b>Dừng Work From Bed</b><small>Điện thoại mất kết nối cho tới khi bạn mở lại.</small></span>
+        <button class="btn danger" id="stop">Dừng</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-events">
+      <h2 id="h-events">Hoạt động gần đây</h2>
+      <ul class="events" id="events"></ul>
+    </section>
+  </div>
+</main>
+
+<div class="overlay" id="offline" hidden>
+  <div class="card">
+    <h2>Work From Bed không chạy</h2>
+    <p>Mở lại bằng biểu tượng trong menu ứng dụng, hoặc chạy <code>./run.sh</code> trong thư mục dự án. Trang này sẽ tự kết nối lại.</p>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="/s/admin.js"></script>
+</body>
+</html>

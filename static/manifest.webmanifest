@@ -1,0 +1,16 @@
+{
+  "name": "Work From Bed",
+  "short_name": "Work From Bed",
+  "description": "Điều khiển laptop từ điện thoại",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "icons": [
+    { "src": "/s/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/s/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/s/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

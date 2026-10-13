@@ -1,0 +1,28 @@
+# Chạy bằng ./docker.sh up: script tự điền màn hình, cookie X11 và UID của phiên đang đăng nhập.
+services:
+  work-from-bed:
+    build: .
+    image: work-from-bed
+    container_name: work-from-bed
+    # Mạng của máy: mở cổng thẳng trên Wi-Fi/Tailscale, và thấy socket X11 dạng abstract
+    # (Docker bản snap không gắn được /tmp/.X11-unix vì snap có /tmp riêng).
+    network_mode: host
+    ipc: host                 # chụp màn hình qua bộ nhớ chia sẻ MIT-SHM, nhanh hơn
+    # Hồ sơ AppArmor mặc định của Docker chặn D-Bus, nên khoá màn hình/ngủ/tắt máy sẽ không chạy.
+    # Container này vốn đã điều khiển toàn bộ màn hình, bỏ AppArmor không mở thêm quyền gì đáng kể.
+    security_opt:
+      - apparmor=unconfined
+    user: "${WFB_UID:?Hãy chạy bằng ./docker.sh up}:${WFB_GID:?Hãy chạy bằng ./docker.sh up}"
+    restart: on-failure       # mất phiên đồ hoạ thì thoát lỗi, Docker chạy lại và chờ phiên mới
+    command: ["--port", "${WFB_PORT:-8765}"]
+    environment:
+      DISPLAY: ${DISPLAY}
+      XAUTHORITY: /state/xauth
+      DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/${WFB_UID}/bus
+      XDG_CONFIG_HOME: /config
+      HOME: /tmp
+    volumes:
+      - ${WFB_STATE}:/state:ro                          # cookie X11 do docker.sh chép ra
+      - ${WFB_CONFIG}:/config/work_from_bed              # dùng chung mã kết nối với bản chạy thường
+      - /run/user/${WFB_UID}/bus:/run/user/${WFB_UID}/bus  # khoá màn hình (D-Bus phiên)
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket  # ngủ, tắt máy (D-Bus hệ thống)

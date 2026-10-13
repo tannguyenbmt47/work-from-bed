@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Work From Bed">
+<title>Work From Bed</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/s/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/s/icon-180.png">
+<link rel="stylesheet" href="/s/style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-touchpad" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 14.5h18M12 14.5V20"/></symbol>
+  <symbol id="i-touch" viewBox="0 0 24 24"><circle cx="12" cy="14" r="3"/><path d="M7 9.2a7 7 0 0 1 10 0M4.3 6.4a11 11 0 0 1 15.4 0"/></symbol>
+  <symbol id="i-mouse-l" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M6 10h12M12 3v7"/><path d="M12 3A6 6 0 0 0 6 9v1h6z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-mouse-r" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M6 10h12M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-kbd" viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M6.5 9.5h.01M10 9.5h.01M14 9.5h.01M17.5 9.5h.01M6.5 12.5h.01M10 12.5h.01M14 12.5h.01M17.5 12.5h.01M8 15.5h8"/></symbol>
+  <symbol id="i-cmd" viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></symbol>
+  <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></symbol>
+  <symbol id="i-vol-down" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15 12h6"/></symbol>
+  <symbol id="i-vol-up" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15 12h6M18 9v6"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m15 9 6 6M21 9l-6 6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M4 5v14l9-7z"/><path d="M16 6v12M20 6v12"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 6v12l-9-6z"/><path d="M6 6v12"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 6v12l9-6z"/><path d="M18 6v12"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-windows" viewBox="0 0 24 24"><rect x="3" y="8" width="13" height="11" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3L3.5 8.5"/><path d="M3.5 3.5v5h5"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m21.5 2.5-7 19-4-8.5-8.5-4z"/><path d="M21.5 2.5 10.5 13"/></symbol>
+</svg>
+
+<div id="app">
+  <div id="main">
+    <div id="viewport">
+      <div id="stage"><canvas id="screen" width="16" height="9"></canvas></div>
+      <svg id="cursor" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true"><path d="M1 1v17l4.6-4.4 3 6.9 2.9-1.3-3-6.7H15z"/></svg>
+      <div id="toast" role="status" aria-live="polite"></div>
+    </div>
+    <button id="zoomchip" class="chip" hidden aria-label="Thu về vừa khung"><span></span><svg class="i"><use href="#i-shrink"/></svg></button>
+
+    <div id="keys" hidden>
+      <div class="kg">
+        <button class="k" data-mod="ctrl">Ctrl</button><button class="k" data-mod="shift">Shift</button>
+        <button class="k" data-mod="alt">Alt</button><button class="k" data-mod="super">Super</button>
+      </div>
+      <div class="kg">
+        <button class="k" data-k="Escape">Esc</button><button class="k" data-k="Tab">Tab</button>
+        <button class="k" data-k="BackSpace" data-rep>⌫</button><button class="k" data-k="Delete" data-rep>Del</button>
+        <button class="k" data-k="Return">Enter</button><button class="k" data-k="space">Space</button>
+      </div>
+      <div class="kg">
+        <button class="k" data-k="Home">Home</button><button class="k" data-k="Left" data-rep aria-label="Trái">←</button>
+        <button class="k" data-k="Up" data-rep aria-label="Lên">↑</button><button class="k" data-k="Down" data-rep aria-label="Xuống">↓</button>
+        <button class="k" data-k="End">End</button><button class="k" data-k="Right" data-rep aria-label="Phải">→</button>
+        <button class="k" data-k="Prior" data-rep>PgUp</button><button class="k" data-k="Next" data-rep>PgDn</button>
+      </div>
+      <div class="kg">
+        <button class="k" data-combo="ctrl+c">Ctrl+C</button><button class="k" data-combo="ctrl+v">Ctrl+V</button>
+        <button class="k" data-combo="ctrl+x">Ctrl+X</button><button class="k" data-combo="ctrl+z" data-rep>Ctrl+Z</button>
+        <button class="k" data-combo="ctrl+a">Ctrl+A</button><button class="k" data-combo="ctrl+s">Ctrl+S</button>
+        <button class="k" data-combo="ctrl+f">Ctrl+F</button><button class="k" data-combo="ctrl+w">Ctrl+W</button>
+        <button class="k" data-combo="ctrl+t">Ctrl+T</button><button class="k" data-combo="ctrl+r">Ctrl+R</button>
+      </div>
+      <div class="kg">
+        <button class="k" data-act="alttab"><svg class="i"><use href="#i-windows"/></svg>Alt+Tab</button><button class="k" data-k="Super_L">Hoạt động</button>
+        <button class="k" data-combo="alt+F4">Alt+F4</button><button class="k" data-k="F11">F11</button>
+        <button class="k" data-k="Print">PrtSc</button><button class="k" data-combo="ctrl+alt+t">Terminal</button>
+      </div>
+      <div class="kg">
+        <button class="k" data-k="XF86_AudioLowerVolume" data-rep aria-label="Giảm âm lượng"><svg class="i"><use href="#i-vol-down"/></svg></button>
+        <button class="k" data-k="XF86_AudioRaiseVolume" data-rep aria-label="Tăng âm lượng"><svg class="i"><use href="#i-vol-up"/></svg></button>
+        <button class="k" data-k="XF86_AudioMute" aria-label="Tắt tiếng"><svg class="i"><use href="#i-mute"/></svg></button>
+        <button class="k" data-k="XF86_AudioPlay" aria-label="Phát / tạm dừng"><svg class="i"><use href="#i-play"/></svg></button>
+        <button class="k" data-k="XF86_AudioPrev" aria-label="Bài trước"><svg class="i"><use href="#i-prev"/></svg></button>
+        <button class="k" data-k="XF86_AudioNext" aria-label="Bài sau"><svg class="i"><use href="#i-next"/></svg></button>
+        <button class="k" data-k="XF86_MonBrightnessDown" data-rep aria-label="Giảm độ sáng"><svg class="i"><use href="#i-sun"/></svg><small>−</small></button>
+        <button class="k" data-k="XF86_MonBrightnessUp" data-rep aria-label="Tăng độ sáng"><svg class="i"><use href="#i-sun"/></svg><small>+</small></button>
+      </div>
+      <div class="kg f">
+        <button class="k" data-k="F1">F1</button><button class="k" data-k="F2">F2</button><button class="k" data-k="F3">F3</button>
+        <button class="k" data-k="F4">F4</button><button class="k" data-k="F5">F5</button><button class="k" data-k="F6">F6</button>
+        <button class="k" data-k="F7">F7</button><button class="k" data-k="F8">F8</button><button class="k" data-k="F9">F9</button>
+        <button class="k" data-k="F10">F10</button><button class="k" data-k="F11">F11</button><button class="k" data-k="F12">F12</button>
+      </div>
+    </div>
+  </div>
+
+  <nav id="bar">
+    <button class="tb" id="b-mode"><svg class="i"><use href="#i-touchpad"/></svg><span>Touchpad</span></button>
+    <button class="tb" id="b-left" aria-label="Giữ chuột trái"><svg class="i"><use href="#i-mouse-l"/></svg><span>Trái</span></button>
+    <button class="tb" id="b-right" aria-label="Giữ chuột phải"><svg class="i"><use href="#i-mouse-r"/></svg><span>Phải</span></button>
+    <button class="tb" id="b-kbd"><svg class="i"><use href="#i-kbd"/></svg><span>Gõ phím</span></button>
+    <button class="tb" id="b-keys"><svg class="i"><use href="#i-cmd"/></svg><span>Phím tắt</span></button>
+    <button class="tb" id="b-full"><svg class="i"><use href="#i-full"/></svg><span>Toàn màn</span></button>
+    <button class="tb" id="b-menu"><svg class="i"><use href="#i-sliders"/></svg><span>Cài đặt</span></button>
+  </nav>
+
+  <textarea id="kbd" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Gõ phím vào laptop"></textarea>
+</div>
+
+<div id="backdrop" hidden></div>
+
+<section id="sheet" class="sheet" hidden aria-label="Cài đặt">
+  <header><h2>Cài đặt</h2><button class="icon-btn" data-close aria-label="Đóng"><svg class="i"><use href="#i-x"/></svg></button></header>
+  <div class="sheet-body">
+    <h3>Điều khiển</h3>
+    <div class="seg" id="seg-mode"><button data-v="touchpad">Touchpad</button><button data-v="touch">Chạm trực tiếp</button></div>
+    <label class="row"><span>Tốc độ chuột</span><input type="range" id="sens" min="0.6" max="3.6" step="0.1"><output id="sens-out"></output></label>
+    <label class="row"><span>Cuộn tự nhiên, như trên điện thoại</span><input type="checkbox" id="natural" class="switch"></label>
+
+    <h3>Màn hình</h3>
+    <div class="seg" id="seg-mon"></div>
+
+    <h3>Chất lượng hình</h3>
+    <div class="seg" id="seg-preset">
+      <button data-v="low">Tiết kiệm<small>mạng yếu</small></button>
+      <button data-v="mid">Cân bằng<small>khuyên dùng</small></button>
+      <button data-v="high">Nét nhất<small>Wi-Fi mạnh</small></button>
+    </div>
+    <p class="hint" id="stats">&nbsp;</p>
+
+    <h3>Gửi văn bản</h3>
+    <textarea id="sendtext" rows="3" placeholder="Gõ hoặc dán một đoạn văn bản (có dấu cũng được), rồi bấm Gửi để gõ vào laptop."></textarea>
+    <div class="btns">
+      <button class="btn primary" id="send-text"><svg class="i"><use href="#i-send"/></svg>Gửi</button>
+      <button class="btn" id="send-enter">Gửi rồi Enter</button>
+    </div>
+
+    <h3>Laptop</h3>
+    <div class="grid2">
+      <button class="btn" data-sys="lock"><svg class="i"><use href="#i-lock"/></svg>Khoá màn hình</button>
+      <button class="btn" data-sys="suspend"><svg class="i"><use href="#i-moon"/></svg>Cho máy ngủ</button>
+      <button class="btn" data-sys="reboot"><svg class="i"><use href="#i-restart"/></svg>Khởi động lại</button>
+      <button class="btn danger" data-sys="poweroff"><svg class="i"><use href="#i-power"/></svg>Tắt máy</button>
+    </div>
+
+    <h3>Khác</h3>
+    <div class="btns">
+      <button class="btn" id="open-help">Hướng dẫn cử chỉ</button>
+      <button class="btn" id="forget">Quên mã kết nối</button>
+    </div>
+  </div>
+</section>
+
+<section id="help" class="sheet" hidden aria-label="Hướng dẫn">
+  <header><h2>Cách điều khiển</h2><button class="icon-btn" data-close aria-label="Đóng"><svg class="i"><use href="#i-x"/></svg></button></header>
+  <div class="sheet-body">
+    <h3>Chế độ Touchpad (mặc định)</h3>
+    <ul class="gestures">
+      <li><b>Rê 1 ngón</b><span>Di chuyển chuột</span></li>
+      <li><b>Chạm 1 ngón</b><span>Click trái</span></li>
+      <li><b>Chạm 2 ngón</b><span>Click phải</span></li>
+      <li><b>Chạm, rồi chạm lại và kéo</b><span>Kéo thả, bôi đen chữ</span></li>
+      <li><b>Kéo 2 ngón</b><span>Cuộn trang</span></li>
+      <li><b>Chụm hoặc mở 2 ngón</b><span>Thu nhỏ, phóng to. Khung nhìn tự đi theo chuột</span></li>
+      <li><b>Chạm 3 ngón</b><span>Click giữa</span></li>
+    </ul>
+    <h3>Chế độ Chạm trực tiếp</h3>
+    <ul class="gestures">
+      <li><b>Chạm</b><span>Click ngay chỗ chạm</span></li>
+      <li><b>Giữ lâu</b><span>Click phải</span></li>
+      <li><b>Kéo 1 ngón</b><span>Kéo thả, bôi đen chữ</span></li>
+      <li><b>Kéo hoặc chụm 2 ngón</b><span>Cuộn hoặc phóng to</span></li>
+    </ul>
+    <h3>Bàn phím</h3>
+    <p>Nút <b>Gõ phím</b> mở bàn phím điện thoại, gõ tiếng Việt bình thường. Nếu laptop đang bật bộ gõ tiếng Việt (Unikey, Bamboo…), hãy chuyển nó về tiếng Anh để chữ không bị bỏ dấu hai lần.</p>
+    <p>Ctrl, Alt, Shift, Super trong <b>Phím tắt</b>: chạm một lần để giữ cho phím kế tiếp, chạm nhanh hai lần để khoá, chạm thêm lần nữa để nhả. Nút <b>Alt+Tab</b> chạm liên tiếp để chuyển qua các cửa sổ.</p>
+    <button class="btn primary block" data-close>Đã hiểu</button>
+  </div>
+</section>
+
+<div id="status" hidden><div class="card"><div class="spinner"></div><p id="status-text"></p><button class="btn primary block" id="status-retry" hidden>Kết nối lại</button></div></div>
+
+<div id="login" hidden>
+  <form class="card" autocomplete="off">
+    <img class="logo" src="/s/icon.svg" alt="">
+    <h1>Work From Bed</h1>
+    <p>Quét mã QR trong bảng điều khiển Work From Bed trên laptop bằng camera, hoặc nhập mã kết nối hiện ở đó.</p>
+    <input id="token" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="xxxx-xxxx-xxxx" aria-label="Mã kết nối">
+    <p class="err" id="login-err" hidden></p>
+    <button class="btn primary block" type="submit">Kết nối</button>
+  </form>
+</div>
+
+<script src="/s/app.js"></script>
+</body>
+</html>
