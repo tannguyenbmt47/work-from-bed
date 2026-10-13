@@ -26,7 +26,6 @@
   <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
   <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
-  <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></symbol>
   <symbol id="i-vol-down" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15 12h6"/></symbol>
   <symbol id="i-vol-up" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15 12h6M18 9v6"/></symbol>
   <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m15 9 6 6M21 9l-6 6"/></symbol>
@@ -39,17 +38,27 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></symbol>
   <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3L3.5 8.5"/><path d="M3.5 3.5v5h5"/></symbol>
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><rect x="2.5" y="10" width="15" height="10" rx="2"/><path d="M6 20.5h.01"/><path d="M9 6.5a8 8 0 0 1 10.3 2.3"/><path d="M20.5 4.5v4.6h-4.6"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m21.5 2.5-7 19-4-8.5-8.5-4z"/><path d="M21.5 2.5 10.5 13"/></symbol>
 </svg>
 
+<div id="shell">
 <div id="app">
   <div id="main">
-    <div id="viewport">
-      <div id="stage"><canvas id="screen" width="16" height="9"></canvas></div>
-      <svg id="cursor" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true"><path d="M1 1v17l4.6-4.4 3 6.9 2.9-1.3-3-6.7H15z"/></svg>
-      <div id="toast" role="status" aria-live="polite"></div>
+    <div id="screenbox">
+      <div id="viewport">
+        <div id="stage"><canvas id="screen" width="16" height="9"></canvas></div>
+        <svg id="cursor" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true"><path d="M1 1v17l4.6-4.4 3 6.9 2.9-1.3-3-6.7H15z"/></svg>
+        <div id="toast" role="status" aria-live="polite"></div>
+      </div>
+      <div class="zoom" role="group" aria-label="Phóng to, thu nhỏ">
+        <button id="zoom-out" aria-label="Thu nhỏ"><svg class="i"><use href="#i-minus"/></svg></button>
+        <button id="zoom-level" aria-label="Về vừa khung">1×</button>
+        <button id="zoom-in" aria-label="Phóng to"><svg class="i"><use href="#i-plus"/></svg></button>
+      </div>
     </div>
-    <button id="zoomchip" class="chip" hidden aria-label="Thu về vừa khung"><span></span><svg class="i"><use href="#i-shrink"/></svg></button>
 
     <div id="keys" hidden>
       <div class="kg">
@@ -104,7 +113,7 @@
     <button class="tb" id="b-right" aria-label="Giữ chuột phải"><svg class="i"><use href="#i-mouse-r"/></svg><span>Phải</span></button>
     <button class="tb" id="b-kbd"><svg class="i"><use href="#i-kbd"/></svg><span>Gõ phím</span></button>
     <button class="tb" id="b-keys"><svg class="i"><use href="#i-cmd"/></svg><span>Phím tắt</span></button>
-    <button class="tb" id="b-full"><svg class="i"><use href="#i-full"/></svg><span>Toàn màn</span></button>
+    <button class="tb" id="b-rotate"><svg class="i"><use href="#i-rotate"/></svg><span>Xoay</span></button>
     <button class="tb" id="b-menu"><svg class="i"><use href="#i-sliders"/></svg><span>Cài đặt</span></button>
   </nav>
 
@@ -131,6 +140,9 @@
       <button data-v="high">Nét nhất<small>Wi-Fi mạnh</small></button>
     </div>
     <p class="hint" id="stats">&nbsp;</p>
+
+    <h3 id="full-title">Hiển thị</h3>
+    <div class="btns"><button class="btn" id="b-full"><svg class="i"><use href="#i-full"/></svg><span>Toàn màn hình</span></button></div>
 
     <h3>Gửi văn bản</h3>
     <textarea id="sendtext" rows="3" placeholder="Gõ hoặc dán một đoạn văn bản (có dấu cũng được), rồi bấm Gửi để gõ vào laptop."></textarea>
@@ -164,7 +176,7 @@
       <li><b>Chạm 1 ngón</b><span>Click trái</span></li>
       <li><b>Chạm 2 ngón</b><span>Click phải</span></li>
       <li><b>Chạm, rồi chạm lại và kéo</b><span>Kéo thả, bôi đen chữ</span></li>
-      <li><b>Kéo 2 ngón</b><span>Cuộn trang</span></li>
+      <li><b>Kéo 2 ngón</b><span>Cuộn trang. Khi đang phóng to: di chuyển khung nhìn, kéo tới mép thì cuộn trang</span></li>
       <li><b>Chụm hoặc mở 2 ngón</b><span>Thu nhỏ, phóng to. Khung nhìn tự đi theo chuột</span></li>
       <li><b>Chạm 3 ngón</b><span>Click giữa</span></li>
     </ul>
@@ -173,8 +185,11 @@
       <li><b>Chạm</b><span>Click ngay chỗ chạm</span></li>
       <li><b>Giữ lâu</b><span>Click phải</span></li>
       <li><b>Kéo 1 ngón</b><span>Kéo thả, bôi đen chữ</span></li>
-      <li><b>Kéo hoặc chụm 2 ngón</b><span>Cuộn hoặc phóng to</span></li>
+      <li><b>Kéo hoặc chụm 2 ngón</b><span>Như chế độ Touchpad: cuộn, di chuyển khung nhìn, phóng to</span></li>
     </ul>
+    <h3>Phóng to và xoay ngang</h3>
+    <p>Nút <b>− / +</b> ở góc dưới màn hình để thu nhỏ, phóng to; chạm vào con số ở giữa để về vừa khung.</p>
+    <p>Nút <b>Xoay ngang</b> chuyển sang hướng ngang kể cả khi điện thoại đang khoá xoay. Trên iPhone, giao diện tạm về hướng dọc lúc bàn phím mở.</p>
     <h3>Bàn phím</h3>
     <p>Nút <b>Gõ phím</b> mở bàn phím điện thoại, gõ tiếng Việt bình thường. Nếu laptop đang bật bộ gõ tiếng Việt (Unikey, Bamboo…), hãy chuyển nó về tiếng Anh để chữ không bị bỏ dấu hai lần.</p>
     <p>Ctrl, Alt, Shift, Super trong <b>Phím tắt</b>: chạm một lần để giữ cho phím kế tiếp, chạm nhanh hai lần để khoá, chạm thêm lần nữa để nhả. Nút <b>Alt+Tab</b> chạm liên tiếp để chuyển qua các cửa sổ.</p>
@@ -193,6 +208,7 @@
     <p class="err" id="login-err" hidden></p>
     <button class="btn primary block" type="submit">Kết nối</button>
   </form>
+</div>
 </div>
 
 <script src="/s/app.js"></script>

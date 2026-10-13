@@ -82,18 +82,21 @@ Chế độ **Touchpad** (mặc định) dùng như touchpad laptop:
 | Chạm 1 ngón | Click trái |
 | Chạm 2 ngón | Click phải |
 | Chạm, rồi chạm lại và kéo | Kéo thả, bôi đen chữ |
-| Kéo 2 ngón | Cuộn (vuốt nhanh thì cuộn theo quán tính) |
+| Kéo 2 ngón | Cuộn (vuốt nhanh thì cuộn theo quán tính). Khi đang phóng to: di chuyển khung nhìn, kéo tới mép thì cuộn trang |
 | Chụm hoặc mở 2 ngón | Thu nhỏ, phóng to. Khi đã phóng to, khung nhìn tự đi theo chuột |
 | Chạm 3 ngón | Click giữa |
 
 Chế độ **Chạm trực tiếp**: chạm vào đâu click vào đó, giữ lâu để click phải, kéo 1 ngón để kéo thả.
+
+Nút **− / +** ở góc dưới màn hình để thu nhỏ, phóng to; chạm vào con số ở giữa để về vừa khung.
 
 Thanh công cụ còn có:
 
 - **Trái / Phải**: giữ nút chuột, dùng ngón khác rê trên màn hình để kéo thả.
 - **Gõ phím**: mở bàn phím điện thoại. Gõ tiếng Việt, gợi ý từ, vuốt phím cách để dời con trỏ đều dùng được.
 - **Phím tắt**: Ctrl/Alt/Shift/Super, Esc, Tab, mũi tên, F1–F12, Ctrl+C/V/Z…, Alt+Tab, âm lượng, nhạc, độ sáng.
-- **Cài đặt**: chọn màn hình (màn laptop hoặc màn rời, nếu có nhiều màn), chất lượng hình, tốc độ chuột, gửi cả đoạn văn bản, khoá màn hình, cho máy ngủ, khởi động lại, tắt máy.
+- **Xoay**: chuyển sang hướng ngang kể cả khi điện thoại đang khoá xoay. Android chuyển toàn màn hình rồi khoá hướng ngang. iPhone không cho khoá hướng nên giao diện được xoay 90°, và tạm về hướng dọc lúc bàn phím mở.
+- **Cài đặt**: toàn màn hình, chọn màn hình (màn laptop hoặc màn rời, nếu có nhiều màn), chất lượng hình, tốc độ chuột, gửi cả đoạn văn bản, khoá màn hình, cho máy ngủ, khởi động lại, tắt máy.
 
 ## Lưu ý
 

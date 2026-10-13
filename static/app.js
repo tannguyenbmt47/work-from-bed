@@ -23,9 +23,9 @@
   };
   const save = (k, v) => { S[k] = v; store.set(k, v); };
 
-  const appEl = $('#app'), viewport = $('#viewport'), stage = $('#stage'), canvas = $('#screen');
+  const shell = $('#shell'), viewport = $('#viewport'), stage = $('#stage'), canvas = $('#screen');
   const ctx = canvas.getContext('2d');
-  const cursorEl = $('#cursor'), kbd = $('#kbd'), zoomChip = $('#zoomchip');
+  const cursorEl = $('#cursor'), kbd = $('#kbd');
 
   // ---------- kết nối ----------
 
@@ -154,6 +154,8 @@
 
   const view = { zoom: 1, x: 0, y: 0, fit: 1 }; // điểm trên màn = (x, y) + điểm trên ảnh * fit * zoom
   let vw = 0, vh = 0, vleft = 0, vtop = 0;
+  let rotateMode = 'off'; // 'off' | 'lock': khoá hướng ngang thật (Android) | 'css': xoay giao diện 90° (iPhone)
+  let toLocal = new DOMMatrix(); // đổi toạ độ chạm trên màn điện thoại sang toạ độ trong #shell
   const scale = () => view.fit * view.zoom;
 
   function viewCentre() { // điểm ảnh đang nằm giữa khung nhìn, tính theo tỉ lệ 0..1
@@ -164,17 +166,26 @@
 
   function layout(centre) {
     const c = centre || viewCentre(); // giữ nguyên chỗ đang nhìn khi xoay máy hoặc bật bàn phím
+    // Bàn phím điện thoại chỉ thu nhỏ visual viewport, nên ứng dụng tự co theo nó.
     const vv = window.visualViewport;
-    if (vv) { // bàn phím điện thoại chỉ thu nhỏ visual viewport, nên tự co ứng dụng theo nó
-      appEl.style.width = vv.width + 'px';
-      appEl.style.height = vv.height + 'px';
-      appEl.style.transform = `translate(${vv.offsetLeft}px, ${vv.offsetTop}px)`;
-    }
-    const r = viewport.getBoundingClientRect();
-    vleft = r.left; vtop = r.top; vw = r.width; vh = r.height;
+    const W = vv ? vv.width : window.innerWidth, H = vv ? vv.height : window.innerHeight;
+    const ox = vv ? vv.offsetLeft : 0, oy = vv ? vv.offsetTop : 0;
     const el = document.activeElement;
-    if (!el || !/^(INPUT|TEXTAREA)$/.test(el.tagName)) fullHeight = vv ? vv.height : window.innerHeight;
+    if (!el || !/^(INPUT|TEXTAREA)$/.test(el.tagName)) fullHeight = H;
+    // Xoay bằng CSS chỉ khi máy đang dựng dọc; tạm thôi xoay lúc bàn phím mở vì bàn phím vẫn nằm dọc.
+    const turn = rotateMode === 'css' && H > W && !keyboardShown();
+    const w = turn ? H : W, h = turn ? W : H;
+    shell.style.width = w + 'px';
+    shell.style.height = h + 'px';
+    shell.style.transform = turn ? `translate(${ox + W}px, ${oy}px) rotate(90deg)` : `translate(${ox}px, ${oy}px)`;
+    shell.classList.toggle('land', w > h);
+    shell.classList.toggle('short', w > h && h < 360);
+    toLocal = new DOMMatrix(getComputedStyle(shell).transform).inverse();
+    let x = 0, y = 0;
+    for (let n = viewport; n && n !== shell; n = n.offsetParent) { x += n.offsetLeft; y += n.offsetTop; }
+    vleft = x; vtop = y; vw = viewport.clientWidth; vh = viewport.clientHeight;
     $('#b-kbd').classList.toggle('active', keyboardShown());
+    $('#b-rotate').classList.toggle('active', rotateMode !== 'off');
     if (!screenW) return;
     view.fit = Math.min(vw / screenW, vh / screenH);
     view.x = vw / 2 - c.u * screenW * scale();
@@ -192,12 +203,34 @@
   function applyView() {
     stage.style.transform = `translate3d(${view.x}px, ${view.y}px, 0) scale(${scale()})`;
     placeCursor();
-    const zoomed = view.zoom > 1.05;
-    zoomChip.hidden = !zoomed;
-    if (zoomed) zoomChip.firstChild.textContent = view.zoom.toFixed(1) + '×';
+    const z = view.zoom;
+    $('#zoom-level').textContent = (z < 1.05 ? '1' : z.toFixed(1)) + '×';
+    $('#zoom-out').disabled = z <= 1.001;
+    $('#zoom-in').disabled = z >= ZOOM_MAX - 0.001;
   }
 
-  zoomChip.addEventListener('click', () => { view.zoom = 1; clampView(); applyView(); });
+  // Nút − / +: Touchpad giữ con trỏ đứng yên khi phóng; Chạm trực tiếp giữ tâm khung nhìn.
+  const ZOOM_MAX = 8, ZOOM_STEP = 1.5;
+  let animTimer = 0;
+  function zoomTo(z) {
+    if (!screenW) return;
+    const c = cursorPos();
+    const onScreen = cursorEl.style.visibility !== 'hidden' && c.x >= 0 && c.y >= 0 && c.x <= vw && c.y <= vh;
+    const a = S.mode === 'touchpad' && onScreen ? c : { x: vw / 2, y: vh / 2 };
+    const s0 = scale(), px = (a.x - view.x) / s0, py = (a.y - view.y) / s0;
+    view.zoom = clamp(z, 1, ZOOM_MAX);
+    view.x = a.x - px * scale();
+    view.y = a.y - py * scale();
+    clampView();
+    stage.classList.add('anim');
+    cursorEl.classList.add('anim');
+    applyView();
+    clearTimeout(animTimer);
+    animTimer = setTimeout(() => { stage.classList.remove('anim'); cursorEl.classList.remove('anim'); }, 220);
+  }
+  $('#zoom-in').addEventListener('click', () => zoomTo(view.zoom * ZOOM_STEP));
+  $('#zoom-out').addEventListener('click', () => zoomTo(view.zoom / ZOOM_STEP));
+  $('#zoom-level').addEventListener('click', () => zoomTo(1));
 
   // ---------- con trỏ ----------
 
@@ -263,7 +296,10 @@
   let pendingTap = 0, lastTap = { t: -1e9, x: 0, y: 0 };
   let fling = 0;
 
-  const pt = (e) => ({ x: e.clientX - vleft, y: e.clientY - vtop });
+  const pt = (e) => {
+    const p = toLocal.transformPoint(new DOMPoint(e.clientX, e.clientY));
+    return { x: p.x - vleft, y: p.y - vtop };
+  };
 
   viewport.addEventListener('pointerdown', (e) => {
     e.preventDefault(); // không cướp focus của ô gõ phím, bàn phím điện thoại vẫn mở
@@ -385,7 +421,7 @@
     const c = mid(a, b), t = now();
     g = {
       type: 'two', t0: t, lt: t, d0: Math.max(1, dist(a, b)), c0: c, lc: c, mode: null, axis: null,
-      zoom0: view.zoom, x0: view.x, y0: view.y, ax: 0, ay: 0, vx: 0, vy: 0, first: { x: a.sx, y: a.sy },
+      zoom0: view.zoom, x0: view.x, y0: view.y, ax: 0, ay: 0, vx: 0, vy: 0, first: { x: a.sx, y: a.sy }, scrolled: false,
     };
   }
 
@@ -396,7 +432,7 @@
       if (Math.abs(d - g.d0) > 30) {
         g.mode = 'pinch';
       } else if (dist(c, g.c0) > 14) {
-        g.mode = 'scroll';
+        g.mode = 'drag';
         g.axis = Math.abs(c.x - g.c0.x) > Math.abs(c.y - g.c0.y) * 1.5 ? 'x' : 'y';
       } else {
         return;
@@ -414,21 +450,37 @@
       return;
     }
     const t = now(), dt = Math.max(8, t - g.lt);
-    const dx = g.axis === 'x' ? c.x - g.lc.x : 0, dy = g.axis === 'y' ? c.y - g.lc.y : 0;
+    const dx = c.x - g.lc.x, dy = c.y - g.lc.y;
     g.lc = c; g.lt = t;
     g.vx = g.vx * 0.6 + (dx / dt) * 0.4;
     g.vy = g.vy * 0.6 + (dy / dt) * 0.4;
-    g.ax += dx; g.ay += dy;
-    scrollSteps(g);
+    if (panOrScroll(dx, dy, g, g.axis, true)) g.scrolled = true;
+  }
+
+  // Kéo hai ngón: đang phóng to thì di chuyển khung nhìn trước; phần kéo vượt mép màn hình laptop
+  // (hoặc khi đang vừa khung) thì cuộn trang trên laptop, giống trang web phóng to trên điện thoại.
+  function panOrScroll(dx, dy, acc, axis, allowScroll) {
+    const x0 = view.x, y0 = view.y;
+    if (view.zoom > 1.01) {
+      view.x += dx;
+      view.y += dy;
+      clampView();
+      if (view.x !== x0 || view.y !== y0) applyView();
+    }
+    if (!allowScroll) return false;
+    acc.ax += axis === 'x' ? dx - (view.x - x0) : 0;
+    acc.ay += axis === 'y' ? dy - (view.y - y0) : 0;
+    return scrollSteps(acc);
   }
 
   function scrollSteps(acc) {
     const nx = Math.trunc(acc.ax / SCROLL_STEP), ny = Math.trunc(acc.ay / SCROLL_STEP);
-    if (!nx && !ny) return;
+    if (!nx && !ny) return false;
     acc.ax -= nx * SCROLL_STEP;
     acc.ay -= ny * SCROLL_STEP;
     const sign = S.natural ? -1 : 1;
     send({ t: 'scroll', dx: sign * nx, dy: sign * ny });
+    return true;
   }
 
   function endTwo(cancelled) {
@@ -436,24 +488,24 @@
       if (S.mode === 'touch') absMove(g.first);
       click(3);
       buzz(15);
-    } else if (!cancelled && g.mode === 'scroll' && now() - g.lt < 60) {
-      startFling(g.vx, g.vy);
+    } else if (!cancelled && g.mode === 'drag' && now() - g.lt < 60) {
+      // Vuốt để di chuyển khung nhìn thì quán tính cũng chỉ di chuyển khung nhìn, không cuộn trang.
+      startFling(g.vx, g.vy, g.axis, g.scrolled || view.zoom <= 1.01);
     }
     g = { type: 'done' };
   }
 
-  // Cuộn theo quán tính sau khi vuốt nhanh hai ngón, như trên điện thoại.
-  function startFling(vx, vy) {
+  // Quán tính sau khi vuốt nhanh hai ngón, như trên điện thoại.
+  function startFling(vx, vy, axis, allowScroll) {
     if (Math.hypot(vx, vy) < 0.4) return;
     const acc = { ax: 0, ay: 0 };
     let last = now();
     const tick = () => {
       const t = now(), dt = t - last;
       last = t;
-      acc.ax += vx * dt; acc.ay += vy * dt;
+      panOrScroll(vx * dt, vy * dt, acc, axis, allowScroll);
       const decay = Math.pow(0.996, dt);
       vx *= decay; vy *= decay;
-      scrollSteps(acc);
       fling = Math.hypot(vx, vy) > 0.06 ? requestAnimationFrame(tick) : 0;
     };
     fling = requestAnimationFrame(tick);
@@ -612,7 +664,7 @@
   // ---------- nút bấm ----------
 
   // Chặn mousedown để chạm nút không làm mất focus ô gõ phím (bàn phím điện thoại không bị đóng).
-  $$('#bar button, #keys button, .chip').forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
+  $$('#bar button, #keys button, .zoom button').forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
 
   function bindPress(el, fire, repeat) {
     let timer = 0, repeated = false;
@@ -672,17 +724,40 @@
 
   const fsEl = document.documentElement;
   const canFullscreen = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
-  $('#b-full').hidden = !canFullscreen;
+  const inFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  $('#b-full').hidden = $('#full-title').hidden = !canFullscreen;
   $('#b-full').addEventListener('click', () => {
-    const inFs = document.fullscreenElement || document.webkitFullscreenElement;
-    const call = inFs
+    const call = inFullscreen()
       ? (document.exitFullscreen || document.webkitExitFullscreen).call(document)
       : (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl, { navigationUI: 'hide' });
     Promise.resolve(call).catch(() => toast('Trình duyệt không cho bật toàn màn hình.'));
   });
-  document.addEventListener('fullscreenchange', () => {
-    $('#b-full').classList.toggle('active', !!document.fullscreenElement);
+  const onFullscreenChange = () => {
+    $('#b-full span').textContent = inFullscreen() ? 'Thoát toàn màn hình' : 'Toàn màn hình';
+    if (!inFullscreen() && rotateMode === 'lock') rotateMode = 'off'; // thoát toàn màn hình thì hết khoá hướng
     setTimeout(layout, 100);
+  };
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+  // Xoay ngang: Android vào toàn màn hình rồi khoá hướng ngang thật (bàn phím xoay theo).
+  // iPhone không cho khoá hướng, nên xoay cả giao diện 90° bằng CSS, dùng được cả khi máy khoá xoay.
+  $('#b-rotate').addEventListener('click', async () => {
+    if (rotateMode !== 'off') {
+      if (rotateMode === 'lock') { try { screen.orientation.unlock(); } catch (_) { /* không hỗ trợ */ } }
+      rotateMode = 'off';
+      layout();
+      return;
+    }
+    let mode = 'css';
+    try {
+      if (!inFullscreen() && fsEl.requestFullscreen) await fsEl.requestFullscreen({ navigationUI: 'hide' });
+      await screen.orientation.lock('landscape');
+      mode = 'lock';
+    } catch (_) { /* không khoá được hướng: dùng cách xoay giao diện */ }
+    rotateMode = mode;
+    layout();
+    if (mode === 'css') toast('Xoay ngang điện thoại để xem.');
   });
 
   function setMode(mode) {

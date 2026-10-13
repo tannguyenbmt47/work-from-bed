@@ -40,14 +40,16 @@ input, textarea { font: inherit; -webkit-user-select: text; user-select: text; }
 
 /* ---------- khung chính ---------- */
 
-#app {
-  position: fixed; left: 0; top: 0;
-  width: 100vw; height: 100vh;
-  display: flex; flex-direction: column;
-  transform-origin: 0 0;
+/* #shell bám theo visual viewport và có thể xoay 90° (nút Xoay ngang trên iPhone). Nó luôn có transform,
+   nên các phần tử position: fixed bên trong (bảng cài đặt, thông báo) xoay theo cùng. */
+#shell {
+  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; overflow: hidden;
+  transform: translate(0, 0); transform-origin: 0 0;
 }
+#app { position: absolute; inset: 0; display: flex; flex-direction: column; }
 #main { position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-#viewport { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #000; touch-action: none; }
+#screenbox { position: relative; flex: 1; min-height: 0; display: flex; }
+#viewport { position: relative; flex: 1; min-width: 0; overflow: hidden; background: #000; touch-action: none; }
 #stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 #screen { display: block; background: #000; }
 #cursor {
@@ -55,25 +57,33 @@ input, textarea { font: inherit; -webkit-user-select: text; user-select: text; }
   fill: #fff; stroke: #111; stroke-width: 1.3; stroke-linejoin: round;
   filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.55));
 }
+#stage.anim, #cursor.anim { transition: transform 0.2s ease-out; }
 
-.chip {
-  position: absolute; z-index: 5; top: 10px; right: 10px;
-  height: 36px; padding: 0 10px 0 13px;
-  display: inline-flex; align-items: center; gap: 6px;
-  border: 1px solid var(--line); border-radius: 18px;
-  background: rgba(21, 24, 29, 0.9); color: var(--text);
-  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+/* Cụm nút phóng to / thu nhỏ ở góc dưới bên phải màn hình */
+.zoom {
+  position: absolute; z-index: 5; right: 10px; bottom: 10px;
+  display: flex; align-items: stretch; height: 40px;
+  border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+  background: rgba(21, 24, 29, 0.82); color: var(--text);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-.chip .i { width: 16px; height: 16px; }
+.zoom button {
+  min-width: 42px; padding: 0 8px; border: 0; background: transparent;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+.zoom button:active { background: var(--surface-3); }
+.zoom button:disabled { opacity: 0.35; }
+.zoom .i { width: 20px; height: 20px; }
+#zoom-level { min-width: 50px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 
 #toast {
-  position: absolute; z-index: 6; left: 50%; bottom: 14px;
+  position: absolute; z-index: 6; left: 50%; top: 12px;
   max-width: calc(100% - 32px); padding: 9px 14px;
   border: 1px solid var(--line); border-radius: 10px;
   background: rgba(21, 24, 29, 0.95);
   font-size: 14px; text-align: center;
-  opacity: 0; transform: translate(-50%, 8px);
+  opacity: 0; transform: translate(-50%, -8px);
   transition: opacity 0.2s, transform 0.2s; pointer-events: none;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -122,22 +132,19 @@ input, textarea { font: inherit; -webkit-user-select: text; user-select: text; }
 .k.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .k.lock::after { content: ""; width: 6px; height: 6px; margin-left: 5px; border-radius: 50%; background: currentColor; }
 
-/* Điện thoại xoay ngang: thanh công cụ dựng dọc bên phải, dải phím còn một hàng. */
-@media (orientation: landscape) {
-  #app { flex-direction: row; }
-  #bar {
-    flex-direction: column; justify-content: center; width: calc(66px + env(safe-area-inset-right));
-    padding: calc(4px + env(safe-area-inset-top)) calc(5px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) 5px;
-    border-top: 0; border-left: 1px solid var(--line);
-  }
-  .tb { flex: 1 1 0; max-width: none; height: auto; min-height: 38px; max-height: 64px; }
-  #keys { gap: 10px; padding: 6px 8px; padding-left: max(8px, env(safe-area-inset-left)); }
-  .kg { grid-template-rows: 38px; }
-  .kg.f { grid-template-columns: repeat(12, 46px); }
+/* Hướng ngang (class do app.js đặt, vì khi xoay bằng CSS thì media query vẫn thấy máy đang dọc):
+   thanh công cụ dựng dọc bên phải, dải phím còn một hàng. */
+.land #app { flex-direction: row; }
+.land #bar {
+  flex-direction: column; justify-content: center; width: calc(66px + env(safe-area-inset-right));
+  padding: calc(4px + env(safe-area-inset-top)) calc(5px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) 5px;
+  border-top: 0; border-left: 1px solid var(--line);
 }
-@media (orientation: landscape) and (max-height: 360px) {
-  .tb span { display: none; }
-}
+.land .tb { flex: 1 1 0; max-width: none; height: auto; min-height: 38px; max-height: 64px; }
+.land #keys { gap: 10px; padding: 6px 8px; padding-left: max(8px, env(safe-area-inset-left)); }
+.land .kg { grid-template-rows: 38px; }
+.land .kg.f { grid-template-columns: repeat(12, 46px); }
+.land.short .tb span { display: none; }
 
 /* ---------- bảng cài đặt / hướng dẫn ---------- */
 
@@ -151,14 +158,12 @@ input, textarea { font: inherit; -webkit-user-select: text; user-select: text; }
   animation: sheet-up 0.2s ease-out;
 }
 @keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
-@media (orientation: landscape) {
-  .sheet {
-    top: 0; left: auto; width: min(420px, 100%); max-height: none;
-    border-top: 0; border-left: 1px solid var(--line); border-radius: 0;
-    padding-right: env(safe-area-inset-right);
-    animation-name: sheet-side;
-  }
-  @keyframes sheet-side { from { transform: translateX(24px); opacity: 0; } }
+@keyframes sheet-side { from { transform: translateX(24px); opacity: 0; } }
+.land .sheet {
+  top: 0; left: auto; width: min(420px, 100%); max-height: none;
+  border-top: 0; border-left: 1px solid var(--line); border-radius: 0;
+  padding-right: env(safe-area-inset-right);
+  animation-name: sheet-side;
 }
 .sheet header { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px 4px 18px; }
 .sheet h2 { margin: 0; font-size: 18px; font-weight: 650; }
