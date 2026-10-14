@@ -19,6 +19,8 @@ services:
       DISPLAY: ${DISPLAY}
       XAUTHORITY: /state/xauth
       DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/${WFB_UID}/bus
+      PULSE_SERVER: unix:/run/user/${WFB_UID}/pulse/native
+      WFB_AUDIO_SOURCE: ${WFB_AUDIO_SOURCE:-@DEFAULT_MONITOR@}
       XDG_CONFIG_HOME: /config
       HOME: /tmp
     volumes:
@@ -26,3 +28,4 @@ services:
       - ${WFB_CONFIG}:/config/work_from_bed              # dùng chung mã kết nối với bản chạy thường
       - /run/user/${WFB_UID}/bus:/run/user/${WFB_UID}/bus  # khoá màn hình (D-Bus phiên)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket  # ngủ, tắt máy (D-Bus hệ thống)
+      - /run/user/${WFB_UID}/pulse:/run/user/${WFB_UID}/pulse    # âm thanh (PipeWire/PulseAudio)

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Work From Bed</title>
 <link rel="icon" href="/s/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/s/fonts.css">
 <link rel="stylesheet" href="/s/admin.css">
 </head>
 <body>
@@ -13,6 +14,9 @@
   <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.5"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.5"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.5"/><path d="M14 14h3v3M20.5 14v.01M14 20.5h.01M17 20.5h3.5V17"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l2.5-6.5 5 13 2.5-6.5h4"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
 </svg>
 
@@ -26,7 +30,7 @@
 
 <main class="grid">
   <section class="card connect" aria-labelledby="h-connect">
-    <h2 id="h-connect">Kết nối điện thoại</h2>
+    <h2 id="h-connect"><span class="hicon"><svg class="i"><use href="#i-qr"/></svg></span>Kết nối điện thoại</h2>
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="qr"><img id="qr" alt="Mã QR để mở Work From Bed trên điện thoại"></div>
     <ol class="steps" id="steps"></ol>
@@ -47,13 +51,13 @@
 
   <div class="col">
     <section class="card" aria-labelledby="h-clients">
-      <h2 id="h-clients">Điện thoại đang kết nối <span class="count" id="client-count">0</span></h2>
+      <h2 id="h-clients"><span class="hicon"><svg class="i"><use href="#i-phone"/></svg></span>Điện thoại đang kết nối <span class="count" id="client-count">0</span></h2>
       <ul class="clients" id="clients"></ul>
       <p class="empty" id="clients-empty">Chưa có điện thoại nào kết nối. Quét mã QR bên cạnh để bắt đầu.</p>
     </section>
 
     <section class="card" aria-labelledby="h-settings">
-      <h2 id="h-settings">Cài đặt</h2>
+      <h2 id="h-settings"><span class="hicon"><svg class="i"><use href="#i-sliders"/></svg></span>Cài đặt</h2>
       <label class="setting" id="autostart-row">
         <span><b>Tự chạy khi đăng nhập</b><small>Bật laptop lên là điện thoại kết nối được ngay, không cần mở terminal.</small></span>
         <input type="checkbox" class="switch" id="autostart">
@@ -70,7 +74,7 @@
     </section>
 
     <section class="card" aria-labelledby="h-events">
-      <h2 id="h-events">Hoạt động gần đây</h2>
+      <h2 id="h-events"><span class="hicon"><svg class="i"><use href="#i-activity"/></svg></span>Hoạt động gần đây</h2>
       <ul class="events" id="events"></ul>
     </section>
   </div>

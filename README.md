@@ -58,6 +58,7 @@ Không muốn cài Python lên máy thì dùng Docker. Chạy các lệnh này t
 - Bản Docker và bản thường dùng chung mã kết nối, chung cổng 8765. Chỉ chạy một bản mỗi lúc.
 - Container dùng mạng của máy (`network_mode: host`). Lý do: Docker cài bằng snap có `/tmp` riêng, không gắn được socket màn hình `/tmp/.X11-unix`, nên container phải kết nối qua socket dạng abstract của Xorg.
 - `./docker.sh up` chép cookie X11 của phiên đang đăng nhập cho container. Mỗi lần đăng nhập lại, phải chạy lại lệnh này. `autostart on` làm việc này tự động.
+- Âm thanh đi qua socket PipeWire/PulseAudio của phiên đăng nhập (`/run/user/<uid>/pulse`), ghi bằng `parec` có sẵn trong image.
 - Container tắt AppArmor (`apparmor=unconfined`) để gọi được D-Bus khi khoá màn hình. Cho máy ngủ, khởi động lại, tắt máy thì container nhờ systemd của người dùng chạy lệnh trên máy, nên không cần sudo.
 
 ## Chạy trong terminal
@@ -86,9 +87,13 @@ Chế độ **Touchpad** (mặc định) dùng như touchpad laptop:
 | Chụm hoặc mở 2 ngón | Thu nhỏ, phóng to. Khi đã phóng to, khung nhìn tự đi theo chuột |
 | Chạm 3 ngón | Click giữa |
 
+**Bàn phím rời** (máy tính bảng, điện thoại gắn bàn phím Bluetooth): gõ thẳng, không cần bấm Gõ phím. Phím được gửi sang như đang cắm bàn phím vào laptop: giữ Alt rồi bấm Tab nhiều lần để chuyển cửa sổ, Ctrl+C, Ctrl+Shift+T… đều dùng được, gõ tiếng Việt bằng bộ gõ của laptop. Với bàn phím Apple trên iPad, phím ⌘ được gửi thành Ctrl (tắt được trong Cài đặt). Vài tổ hợp bị máy tính bảng hoặc trình duyệt giữ lại (⌘+Tab trên iPad, Ctrl+T, Ctrl+W trong Chrome…), hãy dùng dải Phím tắt cho những tổ hợp đó.
+
 Chế độ **Chạm trực tiếp**: chạm vào đâu click vào đó, giữ lâu để click phải, kéo 1 ngón để kéo thả.
 
-Nút **− / +** ở góc dưới màn hình để thu nhỏ, phóng to; chạm vào con số ở giữa để về vừa khung.
+Nút **− / +** (hàng nút ngay trên thanh công cụ; cột bên phải khi xoay ngang) để thu nhỏ, phóng to; chạm vào con số ở giữa để về vừa khung. Các nút này nằm cạnh màn hình laptop chứ không đè lên.
+
+**Âm thanh**: chạm nút loa (cạnh nút − / +) để nghe trên điện thoại những gì laptop đang phát (video, nhạc, cuộc gọi), trễ khoảng 0,15–0,2 giây. Trong lúc nghe, loa laptop tự tắt tiếng và bật lại khi bạn tắt âm thanh trên điện thoại hoặc mất kết nối (tắt được tính năng này trong Cài đặt); loa bạn đã tự tắt từ trước thì giữ nguyên. Trong Cài đặt chọn **Hay** (stereo, ~1,5 Mbit/s) hoặc **Tiết kiệm** (mono, ~0,4 Mbit/s); lúc laptop im lặng thì không tốn mạng. Trình duyệt chỉ cho phát tiếng sau khi bạn chạm vào màn hình, nên mỗi lần mở lại, âm thanh bật ở lần chạm đầu tiên. Cần `ffmpeg` hoặc `pulseaudio-utils` trên laptop (Ubuntu thường có sẵn ffmpeg); muốn ghi từ loa khác, đặt `WFB_AUDIO_SOURCE` bằng tên lấy từ `ffmpeg -sources pulse`.
 
 Thanh công cụ còn có:
 
@@ -104,7 +109,6 @@ Thanh công cụ còn có:
 - **Gập nắp laptop**: mặc định Ubuntu cho máy ngủ khi gập nắp, trừ lúc đang cắm màn hình rời. Muốn gập mà vẫn điều khiển được, sửa `/etc/systemd/logind.conf` thành `HandleLidSwitch=ignore` rồi khởi động lại máy.
 - **Màn hình khoá**: vẫn gõ mật khẩu mở khoá được từ điện thoại.
 - **Chỉ chạy trên phiên X11** ("Ubuntu on Xorg"). Phiên Wayland không cho phép chụp màn hình và giả lập chuột theo cách này.
-- Không truyền âm thanh sang điện thoại.
 - Nếu đã bật tường lửa `ufw`, mở cổng: `sudo ufw allow 8765/tcp`.
 
 ## Bảo mật
@@ -124,5 +128,6 @@ Thanh công cụ còn có:
 | `desktop.py` | Giả lập chuột, bàn phím qua X11 (XTest) |
 | `static/index.html`, `app.js`, `style.css` | Giao diện trên điện thoại |
 | `static/admin.*` | Bảng điều khiển trên laptop |
+| `static/fonts/` | Font Be Vietnam Pro (giấy phép SIL OFL 1.1), đóng gói sẵn để dùng được khi không có Internet |
 | `install.sh`, `launch.sh`, `run.sh` | Cài đặt, mở từ menu, chạy trong terminal |
 | `Dockerfile`, `docker-compose.yml`, `docker.sh` | Chạy bằng Docker |

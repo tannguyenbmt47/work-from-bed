@@ -12,6 +12,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/s/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/s/icon-180.png">
+<link rel="stylesheet" href="/s/fonts.css">
 <link rel="stylesheet" href="/s/style.css">
 </head>
 <body>
@@ -38,10 +39,21 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></symbol>
   <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3L3.5 8.5"/><path d="M3.5 3.5v5h5"/></symbol>
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-rotate" viewBox="0 0 24 24"><rect x="2.5" y="10" width="15" height="10" rx="2"/><path d="M6 20.5h.01"/><path d="M9 6.5a8 8 0 0 1 10.3 2.3"/><path d="M20.5 4.5v4.6h-4.6"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m21.5 2.5-7 19-4-8.5-8.5-4z"/><path d="M21.5 2.5 10.5 13"/></symbol>
+  <!-- hình minh hoạ cử chỉ (vòng tròn = đầu ngón tay) -->
+  <symbol id="g-move" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="3.5" fill="currentColor" fill-opacity=".22"/><path d="M11.5 11.5c2.2-3 4.8-4.6 8.5-5.2"/><path d="M16.6 4.6 20 6.3l-1.7 3.3"/></symbol>
+  <symbol id="g-tap1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".22"/><circle cx="12" cy="12" r="8.2" opacity=".45"/></symbol>
+  <symbol id="g-tap2" viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="3.2" fill="currentColor" fill-opacity=".22"/><circle cx="15.5" cy="12" r="3.2" fill="currentColor" fill-opacity=".22"/><rect x="2.3" y="5.5" width="19.4" height="13" rx="6.5" opacity=".45"/></symbol>
+  <symbol id="g-tap3" viewBox="0 0 24 24"><circle cx="5.6" cy="12" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="12" cy="12" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="18.4" cy="12" r="2.6" fill="currentColor" fill-opacity=".22"/><rect x="1.4" y="7" width="21.2" height="10" rx="5" opacity=".45"/></symbol>
+  <symbol id="g-tapdrag" viewBox="0 0 24 24"><circle cx="7.5" cy="16" r="3.2" fill="currentColor" fill-opacity=".22"/><circle cx="7.5" cy="16" r="6.4" opacity=".45"/><path d="M12.5 11 19 4.5M15 4.5h4v4"/></symbol>
+  <symbol id="g-drag1" viewBox="0 0 24 24"><circle cx="7" cy="12" r="3.6" fill="currentColor" fill-opacity=".22"/><path d="M12 12h8.5M17.5 9l3 3-3 3"/></symbol>
+  <symbol id="g-drag2" viewBox="0 0 24 24"><circle cx="5.5" cy="16.5" r="2.8" fill="currentColor" fill-opacity=".22"/><circle cx="12" cy="16.5" r="2.8" fill="currentColor" fill-opacity=".22"/><path d="M19 20V4.5M16 7.5l3-3 3 3"/></symbol>
+  <symbol id="g-pinch" viewBox="0 0 24 24"><circle cx="8.5" cy="15.5" r="2.8" fill="currentColor" fill-opacity=".22"/><circle cx="15.5" cy="8.5" r="2.8" fill="currentColor" fill-opacity=".22"/><path d="M5 19l-2.5 2.5M2.5 17.5v4h4M19 5l2.5-2.5M17.5 2.5h4v4"/></symbol>
+  <symbol id="g-hold" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".22"/><circle cx="12" cy="12" r="8.4" stroke-dasharray="2.6 2.6"/></symbol>
 </svg>
 
 <div id="shell">
@@ -51,12 +63,16 @@
       <div id="viewport">
         <div id="stage"><canvas id="screen" width="16" height="9"></canvas></div>
         <svg id="cursor" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true"><path d="M1 1v17l4.6-4.4 3 6.9 2.9-1.3-3-6.7H15z"/></svg>
-        <div id="toast" role="status" aria-live="polite"></div>
+        <div id="toast" class="glass" role="status" aria-live="polite"></div>
       </div>
-      <div class="zoom" role="group" aria-label="Phóng to, thu nhỏ">
-        <button id="zoom-out" aria-label="Thu nhỏ"><svg class="i"><use href="#i-minus"/></svg></button>
-        <button id="zoom-level" aria-label="Về vừa khung">1×</button>
-        <button id="zoom-in" aria-label="Phóng to"><svg class="i"><use href="#i-plus"/></svg></button>
+      <!-- Nút loa, phóng to: nằm cạnh màn hình laptop chứ không đè lên (dọc: hàng dưới; ngang: cột bên phải) -->
+      <div id="ctrl">
+        <button id="b-audio" class="fab glass" aria-label="Bật âm thanh"><svg class="i"><use href="#i-mute"/></svg></button>
+        <div class="zoom glass" role="group" aria-label="Phóng to, thu nhỏ">
+          <button id="zoom-out" aria-label="Thu nhỏ"><svg class="i"><use href="#i-minus"/></svg></button>
+          <button id="zoom-level" aria-label="Về vừa khung">1×</button>
+          <button id="zoom-in" aria-label="Phóng to"><svg class="i"><use href="#i-plus"/></svg></button>
+        </div>
       </div>
     </div>
 
@@ -127,8 +143,11 @@
   <div class="sheet-body">
     <h3>Điều khiển</h3>
     <div class="seg" id="seg-mode"><button data-v="touchpad">Touchpad</button><button data-v="touch">Chạm trực tiếp</button></div>
-    <label class="row"><span>Tốc độ chuột</span><input type="range" id="sens" min="0.6" max="3.6" step="0.1"><output id="sens-out"></output></label>
-    <label class="row"><span>Cuộn tự nhiên, như trên điện thoại</span><input type="checkbox" id="natural" class="switch"></label>
+    <div class="group">
+      <label class="row"><span>Tốc độ chuột</span><input type="range" id="sens" min="0.6" max="3.6" step="0.1"><output id="sens-out"></output></label>
+      <label class="row"><span>Cuộn tự nhiên, như trên điện thoại</span><input type="checkbox" id="natural" class="switch"></label>
+      <label class="row"><span>Phím ⌘ Command làm Ctrl<small>Khi gắn bàn phím Apple vào iPad, iPhone</small></span><input type="checkbox" id="cmdctrl" class="switch"></label>
+    </div>
 
     <h3>Màn hình</h3>
     <div class="seg" id="seg-mon"></div>
@@ -140,6 +159,17 @@
       <button data-v="high">Nét nhất<small>Wi-Fi mạnh</small></button>
     </div>
     <p class="hint" id="stats">&nbsp;</p>
+
+    <h3>Âm thanh</h3>
+    <div class="seg" id="seg-audio">
+      <button data-v="off">Tắt</button>
+      <button data-v="lo">Tiết kiệm<small>mono, ít mạng</small></button>
+      <button data-v="hi">Hay<small>stereo</small></button>
+    </div>
+    <div class="group">
+      <label class="row"><span>Tắt loa laptop khi nghe trên điện thoại<small>Loa laptop tự bật lại khi bạn tắt tiếng ở đây</small></span><input type="checkbox" id="mutelaptop" class="switch"></label>
+    </div>
+    <p class="hint">Phát âm thanh của laptop trên điện thoại. Nút loa ở góc màn hình để bật, tắt nhanh.</p>
 
     <h3 id="full-title">Hiển thị</h3>
     <div class="btns"><button class="btn" id="b-full"><svg class="i"><use href="#i-full"/></svg><span>Toàn màn hình</span></button></div>
@@ -153,10 +183,10 @@
 
     <h3>Laptop</h3>
     <div class="grid2">
-      <button class="btn" data-sys="lock"><svg class="i"><use href="#i-lock"/></svg>Khoá màn hình</button>
-      <button class="btn" data-sys="suspend"><svg class="i"><use href="#i-moon"/></svg>Cho máy ngủ</button>
-      <button class="btn" data-sys="reboot"><svg class="i"><use href="#i-restart"/></svg>Khởi động lại</button>
-      <button class="btn danger" data-sys="poweroff"><svg class="i"><use href="#i-power"/></svg>Tắt máy</button>
+      <button class="btn tile" data-sys="lock"><svg class="i"><use href="#i-lock"/></svg>Khoá màn hình</button>
+      <button class="btn tile" data-sys="suspend"><svg class="i"><use href="#i-moon"/></svg>Cho máy ngủ</button>
+      <button class="btn tile" data-sys="reboot"><svg class="i"><use href="#i-restart"/></svg>Khởi động lại</button>
+      <button class="btn tile danger" data-sys="poweroff"><svg class="i"><use href="#i-power"/></svg>Tắt máy</button>
     </div>
 
     <h3>Khác</h3>
@@ -172,25 +202,31 @@
   <div class="sheet-body">
     <h3>Chế độ Touchpad (mặc định)</h3>
     <ul class="gestures">
-      <li><b>Rê 1 ngón</b><span>Di chuyển chuột</span></li>
-      <li><b>Chạm 1 ngón</b><span>Click trái</span></li>
-      <li><b>Chạm 2 ngón</b><span>Click phải</span></li>
-      <li><b>Chạm, rồi chạm lại và kéo</b><span>Kéo thả, bôi đen chữ</span></li>
-      <li><b>Kéo 2 ngón</b><span>Cuộn trang. Khi đang phóng to: di chuyển khung nhìn, kéo tới mép thì cuộn trang</span></li>
-      <li><b>Chụm hoặc mở 2 ngón</b><span>Thu nhỏ, phóng to. Khung nhìn tự đi theo chuột</span></li>
-      <li><b>Chạm 3 ngón</b><span>Click giữa</span></li>
+      <li><svg class="glyph"><use href="#g-move"/></svg><div><b>Rê 1 ngón</b><span>Di chuyển chuột</span></div></li>
+      <li><svg class="glyph"><use href="#g-tap1"/></svg><div><b>Chạm 1 ngón</b><span>Click trái</span></div></li>
+      <li><svg class="glyph"><use href="#g-tap2"/></svg><div><b>Chạm 2 ngón</b><span>Click phải</span></div></li>
+      <li><svg class="glyph"><use href="#g-tapdrag"/></svg><div><b>Chạm, rồi chạm lại và kéo</b><span>Kéo thả, bôi đen chữ</span></div></li>
+      <li><svg class="glyph"><use href="#g-drag2"/></svg><div><b>Kéo 2 ngón</b><span>Cuộn trang. Khi đang phóng to: di chuyển khung nhìn, kéo tới mép thì cuộn trang</span></div></li>
+      <li><svg class="glyph"><use href="#g-pinch"/></svg><div><b>Chụm hoặc mở 2 ngón</b><span>Thu nhỏ, phóng to. Khung nhìn tự đi theo chuột</span></div></li>
+      <li><svg class="glyph"><use href="#g-tap3"/></svg><div><b>Chạm 3 ngón</b><span>Click giữa</span></div></li>
     </ul>
     <h3>Chế độ Chạm trực tiếp</h3>
     <ul class="gestures">
-      <li><b>Chạm</b><span>Click ngay chỗ chạm</span></li>
-      <li><b>Giữ lâu</b><span>Click phải</span></li>
-      <li><b>Kéo 1 ngón</b><span>Kéo thả, bôi đen chữ</span></li>
-      <li><b>Kéo hoặc chụm 2 ngón</b><span>Như chế độ Touchpad: cuộn, di chuyển khung nhìn, phóng to</span></li>
+      <li><svg class="glyph"><use href="#g-tap1"/></svg><div><b>Chạm</b><span>Click ngay chỗ chạm</span></div></li>
+      <li><svg class="glyph"><use href="#g-hold"/></svg><div><b>Giữ lâu</b><span>Click phải</span></div></li>
+      <li><svg class="glyph"><use href="#g-drag1"/></svg><div><b>Kéo 1 ngón</b><span>Kéo thả, bôi đen chữ</span></div></li>
+      <li><svg class="glyph"><use href="#g-pinch"/></svg><div><b>Kéo hoặc chụm 2 ngón</b><span>Như chế độ Touchpad: cuộn, di chuyển khung nhìn, phóng to</span></div></li>
     </ul>
     <h3>Phóng to và xoay ngang</h3>
-    <p>Nút <b>− / +</b> ở góc dưới màn hình để thu nhỏ, phóng to; chạm vào con số ở giữa để về vừa khung.</p>
-    <p>Nút <b>Xoay ngang</b> chuyển sang hướng ngang kể cả khi điện thoại đang khoá xoay. Trên iPhone, giao diện tạm về hướng dọc lúc bàn phím mở.</p>
-    <h3>Bàn phím</h3>
+    <ul class="gestures">
+      <li><svg class="glyph"><use href="#i-sound"/></svg><div><b>Nút loa</b><span>Phát âm thanh của laptop trên điện thoại. Lần đầu cần chạm nút này để trình duyệt cho phát tiếng</span></div></li>
+      <li><svg class="glyph"><use href="#i-plus"/></svg><div><b>Nút − / +</b><span>Ở góc dưới màn hình. Chạm vào con số ở giữa để về vừa khung</span></div></li>
+      <li><svg class="glyph"><use href="#i-rotate"/></svg><div><b>Nút Xoay</b><span>Sang hướng ngang kể cả khi điện thoại đang khoá xoay. Trên iPhone, giao diện tạm về hướng dọc lúc bàn phím mở</span></div></li>
+    </ul>
+    <h3>Bàn phím rời</h3>
+    <p>Gắn bàn phím (Bluetooth, có dây, bàn phím của máy tính bảng) rồi gõ thẳng, không cần bấm <b>Gõ phím</b>. Phím được gửi sang như đang cắm bàn phím vào laptop: giữ <b>Alt</b> rồi bấm <b>Tab</b> nhiều lần để chuyển cửa sổ, Ctrl+C, Ctrl+Shift+T… đều dùng được, gõ tiếng Việt bằng bộ gõ trên laptop.</p>
+    <p>Vài tổ hợp bị máy tính bảng hoặc trình duyệt giữ lại (⌘+Tab trên iPad, Ctrl+T, Ctrl+W trong Chrome…). Dùng các nút trong dải <b>Phím tắt</b> cho những tổ hợp đó.</p>
+    <h3>Bàn phím điện thoại</h3>
     <p>Nút <b>Gõ phím</b> mở bàn phím điện thoại, gõ tiếng Việt bình thường. Nếu laptop đang bật bộ gõ tiếng Việt (Unikey, Bamboo…), hãy chuyển nó về tiếng Anh để chữ không bị bỏ dấu hai lần.</p>
     <p>Ctrl, Alt, Shift, Super trong <b>Phím tắt</b>: chạm một lần để giữ cho phím kế tiếp, chạm nhanh hai lần để khoá, chạm thêm lần nữa để nhả. Nút <b>Alt+Tab</b> chạm liên tiếp để chuyển qua các cửa sổ.</p>
     <button class="btn primary block" data-close>Đã hiểu</button>

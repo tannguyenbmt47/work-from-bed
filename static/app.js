@@ -14,10 +14,16 @@
     get(k, d) { try { const v = localStorage.getItem('wfb.' + k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } },
     set(k, v) { try { localStorage.setItem('wfb.' + k, JSON.stringify(v)); } catch (_) { /* chế độ ẩn danh */ } },
   };
+  // iPadOS báo mình là "Macintosh", nhận ra nhờ màn hình cảm ứng.
+  const isApple = /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   const S = {
     mode: store.get('mode', 'touchpad'), // 'touchpad' | 'touch'
     sens: store.get('sens', 1.6),
     natural: store.get('natural', true),
+    cmdCtrl: store.get('cmdCtrl', isApple), // phím ⌘ Command gửi sang laptop thành Ctrl
+    audioQ: store.get('audioQ', 'hi'), // âm thanh: 'hi' stereo 48 kHz, 'lo' mono 24 kHz
+    muteLaptop: store.get('muteLaptop', true), // nghe trên điện thoại thì tắt tiếng loa laptop
     preset: store.get('preset', 'mid'),
     mon: store.get('mon', null),
   };
@@ -57,6 +63,7 @@
       if (ws !== sock) return;
       ws = null;
       frames.length = 0;
+      if ([4001, 4002, 4004].includes(e.code)) stopAudio(false);
       if (e.code === 4001 || e.code === 4004) {
         token = '';
         store.set('token', '');
@@ -630,7 +637,108 @@
     if (c <= 0) resetKbd();
   });
 
-  // Bàn phím rời (Bluetooth) nối với điện thoại: phím mũi tên, F1–F12, tổ hợp Ctrl/Alt.
+  // ---------- bàn phím rời (máy tính bảng, điện thoại gắn bàn phím) ----------
+  // Khi không có ô nhập nào đang mở, phím trên bàn phím rời được gửi thẳng sang laptop theo vị trí phím,
+  // như cắm bàn phím vào laptop (bộ gõ tiếng Việt trên laptop vẫn dùng được). Ctrl/Alt/Shift/⌘ được giữ
+  // thật trên laptop trong lúc bạn giữ, nên giữ Alt rồi bấm Tab nhiều lần vẫn chuyển cửa sổ. Các phím
+  // khác gửi kiểu bấm-nhả mỗi lần trình duyệt báo (kể cả khi giữ phím), nên không bao giờ bị kẹt phím.
+  const HW_SPECIAL = {
+    Enter: 'Return', Backspace: 'BackSpace', Tab: 'Tab', Escape: 'Escape', Delete: 'Delete', Insert: 'Insert',
+    ArrowLeft: 'Left', ArrowRight: 'Right', ArrowUp: 'Up', ArrowDown: 'Down',
+    Home: 'Home', End: 'End', PageUp: 'Prior', PageDown: 'Next',
+    CapsLock: 'Caps_Lock', NumLock: 'Num_Lock', ScrollLock: 'Scroll_Lock', Pause: 'Pause', PrintScreen: 'Print',
+    ContextMenu: 'Menu', AudioVolumeUp: 'XF86_AudioRaiseVolume', AudioVolumeDown: 'XF86_AudioLowerVolume',
+    AudioVolumeMute: 'XF86_AudioMute', MediaPlayPause: 'XF86_AudioPlay', MediaTrackNext: 'XF86_AudioNext',
+    MediaTrackPrevious: 'XF86_AudioPrev', MediaStop: 'XF86_AudioStop',
+    BrightnessUp: 'XF86_MonBrightnessUp', BrightnessDown: 'XF86_MonBrightnessDown',
+  };
+  const HW_CODES = {
+    Space: 'space', Minus: 'minus', Equal: 'equal', BracketLeft: 'bracketleft', BracketRight: 'bracketright',
+    Backslash: 'backslash', Semicolon: 'semicolon', Quote: 'apostrophe', Comma: 'comma', Period: 'period',
+    Slash: 'slash', Backquote: 'grave', NumpadAdd: 'KP_Add', NumpadSubtract: 'KP_Subtract',
+    NumpadMultiply: 'KP_Multiply', NumpadDivide: 'KP_Divide', NumpadDecimal: 'KP_Decimal', NumpadEnter: 'KP_Enter',
+  };
+  const hwHeld = new Map(); // phím bổ trợ đang giữ: e.code -> tên phím trên laptop
+  let hwHinted = false;
+
+  function hwModifier(e) {
+    const right = e.code.endsWith('Right');
+    if (e.key === 'Control') return right ? 'Control_R' : 'Control_L';
+    if (e.key === 'Shift') return right ? 'Shift_R' : 'Shift_L';
+    if (e.key === 'Alt') return right ? 'Alt_R' : 'Alt_L';
+    if (e.key === 'AltGraph') return 'ISO_Level3_Shift';
+    if (e.key === 'Meta' || e.key === 'OS') return S.cmdCtrl ? (right ? 'Control_R' : 'Control_L') : (right ? 'Super_R' : 'Super_L');
+    return null;
+  }
+
+  function hwKey(e) {
+    if (HW_SPECIAL[e.key]) return HW_SPECIAL[e.key];
+    if (/^F\d{1,2}$/.test(e.key)) return e.key;
+    // Theo vị trí phím (e.code), không theo ký tự: Shift đang được giữ thật trên laptop nên laptop tự
+    // ra chữ hoa/ký hiệu; Option+F trên bàn phím Apple ra "ƒ" nhưng ý người dùng là Alt+F.
+    let m;
+    if ((m = /^Key([A-Z])$/.exec(e.code))) return m[1].toLowerCase();
+    if ((m = /^(?:Digit|Numpad)(\d)$/.exec(e.code))) return m[1]; // số bên bàn phím số cũng gửi như số thường
+    if (HW_CODES[e.code]) return HW_CODES[e.code];
+    return e.key.length === 1 ? e.key : null; // phím lạ: gửi theo ký tự
+  }
+
+  function hwActive() {
+    const el = document.activeElement;
+    if (el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) return false; // đang gõ vào ô nhập hoặc bàn phím ảo
+    return ws && screenW && $('#login').hidden && $('#backdrop').hidden;
+  }
+
+  // Trạng thái Ctrl/Shift/Alt mà trình duyệt báo kèm mỗi phím là chuẩn. Nếu lỡ mất sự kiện bấm/nhả phím
+  // bổ trợ (giữ Shift từ trước khi trang có focus…), bù thêm vào phím này hoặc nhả phím đang giữ thừa.
+  const HW_MODS = { Shift_: 'shift', Control_: 'ctrl', Alt_: 'alt', Super_: 'super' };
+  function hwSyncMods(e) {
+    const want = {
+      Shift_: e.shiftKey, Control_: e.ctrlKey || (S.cmdCtrl && e.metaKey), Alt_: e.altKey, Super_: !S.cmdCtrl && e.metaKey,
+    };
+    const extra = [];
+    for (const prefix in want) {
+      const held = [...hwHeld].filter(([, n]) => n.startsWith(prefix));
+      if (want[prefix] && !held.length) extra.push(HW_MODS[prefix]);
+      if (!want[prefix]) held.forEach(([code, n]) => { hwHeld.delete(code); send({ t: 'keyup', k: n }); });
+    }
+    // Chữ hoa mà không có Shift lẫn Caps Lock (bàn phím ảo của hệ điều hành, công cụ gõ hộ…)
+    if (/^Key[A-Z]$/.test(e.code) && e.key.length === 1 && e.key !== e.key.toLowerCase()
+      && !e.shiftKey && !(e.getModifierState && e.getModifierState('CapsLock'))) extra.push('shift');
+    return extra;
+  }
+
+  function hwReleaseAll() {
+    hwHeld.forEach((name) => send({ t: 'keyup', k: name }));
+    hwHeld.clear();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.isComposing) return;
+    if (!$('#backdrop').hidden && e.key === 'Escape') { e.preventDefault(); closeSheets(); return; }
+    if (!hwActive()) return;
+    const mod = hwModifier(e);
+    const name = mod || hwKey(e);
+    if (!name) return;
+    e.preventDefault(); // chặn phím tắt của trình duyệt (Ctrl+S, Ctrl+F, F5…) khi trình duyệt cho phép
+    if (mod) {
+      if (!hwHeld.has(e.code)) { hwHeld.set(e.code, mod); send({ t: 'keydown', k: mod }); }
+    } else {
+      send({ t: 'key', k: name, mods: hwSyncMods(e) });
+      releaseMods(); // phím bổ trợ "dính" trên dải Phím tắt chỉ áp dụng cho một phím
+    }
+    if (!hwHinted) { hwHinted = true; toast('Đã nhận bàn phím rời: phím bấm được gửi thẳng sang laptop.'); }
+  });
+  document.addEventListener('keyup', (e) => {
+    const name = hwHeld.get(e.code);
+    if (name) { hwHeld.delete(e.code); send({ t: 'keyup', k: name }); }
+    if (name || (hwActive() && hwKey(e))) e.preventDefault(); // không để Space/Enter "bấm" nút đang được focus
+  });
+  // Chuyển ứng dụng (⌘+Tab trên iPad…) thì trang không nhận được lúc nhả phím: nhả hết cho chắc.
+  window.addEventListener('blur', hwReleaseAll);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) hwReleaseAll(); });
+
+  // Ô nhập ẩn (bàn phím ảo đang mở) mà gõ bằng bàn phím rời: phím mũi tên, F1–F12, tổ hợp Ctrl/Alt.
   const KEYMAP = {
     ArrowLeft: 'Left', ArrowRight: 'Right', ArrowUp: 'Up', ArrowDown: 'Down', Escape: 'Escape', Tab: 'Tab',
     Delete: 'Delete', Home: 'Home', End: 'End', PageUp: 'Prior', PageDown: 'Next', Insert: 'Insert',
@@ -638,7 +746,8 @@
   kbd.addEventListener('keydown', (e) => {
     if (e.isComposing || e.keyCode === 229) return;
     const name = KEYMAP[e.key] || (/^F\d{1,2}$/.test(e.key) ? e.key : '');
-    const mods = [e.ctrlKey && 'ctrl', e.altKey && 'alt', e.metaKey && 'super'].filter(Boolean);
+    const mods = [(e.ctrlKey || (e.metaKey && S.cmdCtrl)) && 'ctrl', e.altKey && 'alt', e.metaKey && !S.cmdCtrl && 'super']
+      .filter(Boolean);
     if (!name && !(mods.length && e.key.length === 1)) return; // chữ, Enter, xoá: đi qua sự kiện input
     e.preventDefault();
     if (e.shiftKey) mods.push('shift');
@@ -664,7 +773,7 @@
   // ---------- nút bấm ----------
 
   // Chặn mousedown để chạm nút không làm mất focus ô gõ phím (bàn phím điện thoại không bị đóng).
-  $$('#bar button, #keys button, .zoom button').forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
+  $$('#bar button, #keys button, #ctrl button').forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
 
   function bindPress(el, fire, repeat) {
     let timer = 0, repeated = false;
@@ -735,6 +844,8 @@
   const onFullscreenChange = () => {
     $('#b-full span').textContent = inFullscreen() ? 'Thoát toàn màn hình' : 'Toàn màn hình';
     if (!inFullscreen() && rotateMode === 'lock') rotateMode = 'off'; // thoát toàn màn hình thì hết khoá hướng
+    // Toàn màn hình: xin giữ cả tổ hợp trình duyệt hay dành riêng (Ctrl+W, Ctrl+T…) cho bàn phím rời.
+    if (inFullscreen() && navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock().catch(() => {});
     setTimeout(layout, 100);
   };
   document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -800,6 +911,9 @@
     $('#sens').value = S.sens;
     $('#sens-out').textContent = Number(S.sens).toFixed(1);
     $('#natural').checked = S.natural;
+    $('#cmdctrl').checked = S.cmdCtrl;
+    $('#mutelaptop').checked = S.muteLaptop;
+    segSelect('#seg-audio', audio.on ? S.audioQ : 'off');
     const box = $('#seg-mon');
     box.textContent = '';
     monitors.forEach((m) => {
@@ -836,6 +950,7 @@
     $('#sens-out').textContent = S.sens.toFixed(1);
   });
   $('#natural').addEventListener('change', (e) => save('natural', e.target.checked));
+  $('#cmdctrl').addEventListener('change', (e) => { hwReleaseAll(); save('cmdCtrl', e.target.checked); });
 
   function sendText(enter) {
     const ta = $('#sendtext');
@@ -877,6 +992,144 @@
       $('#stats').textContent = ws ? `Độ trễ ${rtt} ms · ${fps} lần cập nhật/giây · ${kbs} KB/s` : 'Chưa kết nối.';
     }
   }, 1000);
+
+  // ---------- âm thanh từ laptop ----------
+  // Phát qua Web Audio: mỗi gói PCM 20 ms thành một AudioBuffer, xếp nối tiếp trên đồng hồ của
+  // AudioContext, đệm ~120 ms để chịu được mạng chập chờn. (AudioWorklet cần https nên không dùng.)
+  const AUDIO_LEAD = 0.12, AUDIO_MAX = 0.35; // giây
+  const audio = { on: false, live: false, ctx: null, out: null, ws: null, next: 0, rate: 48000, ch: 2, retry: 0, timer: 0, announce: false };
+
+  function renderAudio() {
+    const b = $('#b-audio');
+    b.classList.toggle('on', audio.on && audio.live);
+    b.classList.toggle('wait', audio.on && !audio.live);
+    b.querySelector('use').setAttribute('href', audio.on ? '#i-sound' : '#i-mute');
+    b.setAttribute('aria-label', audio.on ? 'Tắt âm thanh' : 'Bật âm thanh');
+    segSelect('#seg-audio', audio.on ? S.audioQ : 'off');
+  }
+
+  function startAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { toast('Trình duyệt này không phát được âm thanh.'); return; }
+    if (!audio.ctx) {
+      try { audio.ctx = new AC({ sampleRate: 48000, latencyHint: 'interactive' }); } catch (_) { audio.ctx = new AC(); }
+      audio.out = audio.ctx.createGain();
+      audio.out.connect(audio.ctx.destination);
+    }
+    // iPhone: Web Audio mặc định câm khi gạt nút im lặng; xin phát như một trình nghe nhạc.
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) { /* không hỗ trợ */ }
+    audio.ctx.resume();
+    audio.on = true;
+    audio.announce = true; // báo một lần khi luồng tiếng đầu tiên chạy
+    save('audio', true);
+    openAudio();
+    renderAudio();
+  }
+
+  function stopAudio(remember = true) {
+    audio.on = false;
+    audio.live = false;
+    if (remember) save('audio', false);
+    clearTimeout(audio.timer);
+    closeAudioSocket();
+    if (audio.ctx) audio.ctx.suspend();
+    renderAudio();
+  }
+
+  function closeAudioSocket() {
+    if (audio.ws) { const s = audio.ws; audio.ws = null; s.close(); }
+  }
+
+  function openAudio() {
+    clearTimeout(audio.timer);
+    if (!audio.on || audio.ws || !token || document.hidden) return;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const sock = new WebSocket(
+      `${proto}://${location.host}/audio?k=${encodeURIComponent(token)}&q=${S.audioQ}&mute=${S.muteLaptop ? 1 : 0}`);
+    sock.binaryType = 'arraybuffer';
+    audio.ws = sock;
+    audio.next = 0;
+    sock.onmessage = (e) => {
+      if (typeof e.data !== 'string') { playChunk(e.data); return; }
+      const m = JSON.parse(e.data);
+      audio.rate = m.rate;
+      audio.ch = m.channels;
+      audio.retry = 0;
+      audio.live = true;
+      if (audio.announce) {
+        audio.announce = false;
+        toast(m.laptop_muted ? 'Đang phát trên điện thoại, loa laptop tạm tắt.' : 'Đang phát âm thanh trên điện thoại.');
+      }
+      renderAudio();
+    };
+    sock.onclose = (e) => {
+      if (audio.ws !== sock) return;
+      audio.ws = null;
+      audio.live = false;
+      if (!audio.on) return;
+      if (e.code === 4005) { toast('Laptop chưa ghi được âm thanh: cần cài ffmpeg hoặc pulseaudio-utils.'); stopAudio(); return; }
+      if ([4001, 4002, 4003, 4004].includes(e.code)) { stopAudio(false); return; }
+      audio.timer = setTimeout(openAudio, Math.min(10, 1 + audio.retry++) * 1000);
+      renderAudio();
+    };
+  }
+
+  function playChunk(buf) {
+    const ctx = audio.ctx, ch = audio.ch;
+    if (!ctx || ctx.state !== 'running') return;
+    const pcm = new Int16Array(buf), frames = pcm.length / ch;
+    const ab = ctx.createBuffer(ch, frames, audio.rate);
+    for (let c = 0; c < ch; c++) {
+      const out = ab.getChannelData(c);
+      for (let i = 0, j = c; i < frames; i++, j += ch) out[i] = pcm[j] / 32768;
+    }
+    const now = ctx.currentTime;
+    if (audio.next < now + 0.005) audio.next = now + AUDIO_LEAD; // thiếu dữ liệu (mới bật, mạng chậm): đệm lại
+    else if (audio.next > now + AUDIO_MAX) return; // dồn quá nhiều: bỏ gói này để giữ độ trễ thấp
+    const src = ctx.createBufferSource();
+    src.buffer = ab;
+    src.connect(audio.out);
+    src.start(audio.next);
+    audio.next += ab.duration;
+  }
+
+  $('#b-audio').addEventListener('click', () => (audio.on ? stopAudio() : startAudio()));
+  $('#seg-audio').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.v === 'off') { stopAudio(); return; }
+    save('audioQ', b.dataset.v);
+    if (!audio.on) { startAudio(); return; }
+    closeAudioSocket();
+    audio.live = false;
+    openAudio();
+    renderAudio();
+  });
+  $('#mutelaptop').addEventListener('change', (e) => {
+    save('muteLaptop', e.target.checked);
+    if (!audio.on) return;
+    closeAudioSocket(); // nối lại để laptop biết lựa chọn mới
+    audio.live = false;
+    audio.announce = true;
+    openAudio();
+    renderAudio();
+  });
+  // Trình duyệt chỉ cho phát tiếng sau một thao tác của người dùng: lần trước có bật thì bật lại ở lần chạm đầu.
+  if (store.get('audio', false)) {
+    const resume = (e) => {
+      if (e.target.closest && e.target.closest('#b-audio, #seg-audio')) return;
+      document.removeEventListener('pointerup', resume, true);
+      document.removeEventListener('keydown', resume, true);
+      if (!audio.on) startAudio();
+    };
+    document.addEventListener('pointerup', resume, true);
+    document.addEventListener('keydown', resume, true);
+  }
+  // Ẩn trang thì ngắt luồng tiếng cho đỡ tốn mạng; mở lại thì nối lại.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { closeAudioSocket(); audio.live = false; } else openAudio();
+    renderAudio();
+  });
 
   // ---------- trạng thái, đăng nhập, thông báo ----------
 
@@ -933,6 +1186,7 @@
   document.addEventListener('gesturestart', (e) => e.preventDefault()); // Safari: chặn phóng to cả trang
 
   setMode(S.mode);
+  renderAudio();
   layout();
   connect();
 })();

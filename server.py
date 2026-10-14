@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import secrets
+import shutil
 import signal
 import socket
 import subprocess
@@ -61,6 +62,9 @@ SYSTEM_ACTIONS = {
     "reboot": [["systemctl", "reboot"], [VIA_USER_SYSTEMD, "/usr/bin/systemctl", "reboot"]],
     "poweroff": [["systemctl", "poweroff"], [VIA_USER_SYSTEMD, "/usr/bin/systemctl", "poweroff"]],
 }
+# Âm thanh: "hi" stereo 48 kHz (~1,5 Mbit/s), "lo" mono 24 kHz (~0,4 Mbit/s); PCM 16-bit, gói 20 ms.
+AUDIO_FORMATS = {"hi": (48000, 2), "lo": (24000, 1)}
+
 SYSTEM_MESSAGES = {
     "lock": "Đã khoá màn hình laptop.",
     "suspend": "Laptop đang chuyển sang chế độ ngủ…",
@@ -139,6 +143,113 @@ def run_via_user_systemd(argv):
     msg = new_method_call(manager, "StartTransientUnit", "ssa(sv)a(sa(sv))", (unit, "fail", props, []))
     with open_dbus_connection(bus="SESSION") as conn:
         unwrap_msg(conn.send_and_get_reply(msg, timeout=10))  # lỗi D-Bus sẽ nổ thành exception
+
+
+def audio_command(rate, channels):
+    """Lệnh ghi lại những gì đang phát ra loa mặc định (monitor), xuất PCM s16le ra stdout.
+    Đặt WFB_AUDIO_SOURCE để ghi từ nguồn khác (tên lấy từ `ffmpeg -sources pulse`)."""
+    source = os.environ.get("WFB_AUDIO_SOURCE", "@DEFAULT_MONITOR@")
+    if shutil.which("parec"):
+        return ["parec", f"--device={source}", "--format=s16le", f"--rate={rate}",
+                f"--channels={channels}", "--latency-msec=20"]
+    if shutil.which("ffmpeg"):
+        return ["ffmpeg", "-nostdin", "-loglevel", "error", "-f", "pulse", "-sample_rate", str(rate),
+                "-channels", str(channels), "-fragment_size", str(rate * channels * 2 // 50),
+                "-i", source, "-f", "s16le", "-flush_packets", "1", "-"]
+    return None
+
+
+class LaptopSpeaker:
+    """Tắt tiếng loa laptop khi có điện thoại đang nghe, bật lại khi không còn ai nghe.
+
+    Monitor của loa trong PipeWire không bị ảnh hưởng khi loa tắt tiếng, nên điện thoại vẫn nghe đủ.
+    Chỉ bật lại những loa do mình tắt; danh sách được ghi ra file để lỡ server bị tắt ngang thì lần
+    chạy sau vẫn bật lại được."""
+
+    STATE = CONFIG_FILE.parent / "muted-speakers.json"
+
+    def __init__(self):
+        self.listeners = 0
+        self.lock = asyncio.Lock()
+        self.watcher = None
+        try:
+            self.muted = set(json.loads(self.STATE.read_text()))
+        except (OSError, ValueError):
+            self.muted = set()
+
+    def _save(self):
+        if self.muted:
+            self.STATE.write_text(json.dumps(sorted(self.muted)))
+        else:
+            self.STATE.unlink(missing_ok=True)
+
+    @staticmethod
+    def _target(pulse):
+        """Loa đang được ghi tiếng: loa mặc định, hoặc loa có monitor đặt trong WFB_AUDIO_SOURCE."""
+        source = os.environ.get("WFB_AUDIO_SOURCE", "@DEFAULT_MONITOR@")
+        if source == "@DEFAULT_MONITOR@":
+            return pulse.server_info().default_sink_name
+        return source[: -len(".monitor")] if source.endswith(".monitor") else None  # micro…: không tắt gì
+
+    def _mute_default(self):
+        """Tắt tiếng loa đang được ghi (nếu chưa ai tắt). Trả về True nếu loa đang im nhờ mình."""
+        import pulsectl
+        with pulsectl.Pulse("work-from-bed") as pulse:
+            name = self._target(pulse)
+            if name is None:
+                return False
+            if name in self.muted:
+                return True
+            sink = pulse.get_sink_by_name(name)
+            if sink.mute:  # người dùng đã tự tắt tiếng: không đụng tới, sau này cũng không bật lại
+                return False
+            pulse.sink_mute(sink.index, True)
+            self.muted.add(name)
+            self._save()
+            log.info("Đã tắt tiếng loa laptop (%s) vì đang phát trên điện thoại.", name)
+            return True
+
+    def _restore(self):
+        if not self.muted:
+            return
+        import pulsectl
+        with pulsectl.Pulse("work-from-bed") as pulse:
+            for name in self.muted:
+                with contextlib.suppress(Exception):
+                    pulse.sink_mute(pulse.get_sink_by_name(name).index, False)
+        log.info("Đã bật lại loa laptop.")
+        self.muted.clear()
+        self._save()
+
+    async def _call(self, fn):
+        try:
+            return await asyncio.to_thread(fn)
+        except Exception as e:  # không có PulseAudio/PipeWire, thiếu libpulse…: vẫn truyền tiếng bình thường
+            log.warning("Không điều khiển được loa laptop: %r", e)
+            return False
+
+    async def _follow_default(self):
+        while True:  # đổi loa trong lúc nghe (cắm tai nghe…) thì tắt tiếng luôn loa mới
+            await asyncio.sleep(3)
+            await self._call(self._mute_default)
+
+    async def acquire(self):
+        async with self.lock:
+            self.listeners += 1
+            if self.listeners == 1:
+                self.watcher = asyncio.create_task(self._follow_default())
+            return await self._call(self._mute_default)
+
+    async def release(self):
+        async with self.lock:
+            self.listeners -= 1
+            if self.listeners == 0:
+                self.watcher.cancel()
+                await self._call(self._restore)
+
+    async def restore_leftovers(self):
+        if self.muted:
+            await self._call(self._restore)
 
 
 def add_event(app, kind, text):
@@ -398,6 +509,73 @@ async def ws_handler(request):
     return ws
 
 
+async def audio_handler(request):
+    app, ip = request.app, request.remote
+    ws = web.WebSocketResponse(heartbeat=20)
+    await ws.prepare(request)
+    if app["guard"].blocked(ip):
+        await ws.close(code=4003, message=b"too many attempts")
+        return ws
+    if not token_matches(request.query.get("k", ""), app["token"]):
+        app["guard"].fail(ip)
+        await ws.close(code=4001, message=b"bad token")
+        return ws
+    rate, channels = AUDIO_FORMATS.get(request.query.get("q"), AUDIO_FORMATS["hi"])
+    cmd = audio_command(rate, channels)
+    if not cmd:
+        log.warning("Không có parec hay ffmpeg để ghi âm thanh.")
+        await ws.close(code=4005, message=b"no audio capture tool")
+        return ws
+
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    chunk = rate * channels * 2 // 50  # 20 ms
+    queue = asyncio.Queue(maxsize=10)  # mạng chậm thì bỏ đoạn cũ, giữ độ trễ dưới ~200 ms
+
+    async def capture():
+        try:
+            while True:
+                data = await proc.stdout.readexactly(chunk)
+                if not data.strip(b"\0"):
+                    continue  # im lặng tuyệt đối (không có gì đang phát): không gửi cho đỡ tốn mạng
+                if queue.full():
+                    queue.get_nowait()
+                queue.put_nowait(data)
+        except asyncio.IncompleteReadError:
+            log.warning("Chương trình ghi âm thanh đã dừng.")
+            await ws.close(code=4006, message=b"audio capture stopped")
+
+    async def pump():
+        while True:
+            await ws.send_bytes(await queue.get())
+
+    mute = request.query.get("mute") == "1"
+    laptop_muted = await app["speaker"].acquire() if mute else False
+    await ws.send_json({"t": "audio", "rate": rate, "channels": channels, "laptop_muted": laptop_muted})
+    device = device_label(request.headers.get("User-Agent"))
+    log.info("Điện thoại %s bật âm thanh (%d Hz, %d kênh).", ip, rate, channels)
+    add_event(app, "audio", f"{device} ({ip}) bật âm thanh" + (", loa laptop tạm tắt" if laptop_muted else ""))
+    app["audio_sockets"].add(ws)
+    tasks = [asyncio.create_task(until_disconnected(capture())), asyncio.create_task(until_disconnected(pump()))]
+    try:
+        async for _ in ws:
+            pass
+    except ConnectionError:
+        pass
+    finally:
+        app["audio_sockets"].discard(ws)
+        for task in tasks:
+            task.cancel()
+        with contextlib.suppress(ProcessLookupError):
+            proc.kill()
+        await proc.wait()
+        if mute:
+            await app["speaker"].release()
+        log.info("Điện thoại %s tắt âm thanh.", ip)
+        add_event(app, "audio", f"{device} ({ip}) tắt âm thanh")
+    return ws
+
+
 async def index(request):
     return web.FileResponse(STATIC / "index.html")
 
@@ -486,6 +664,8 @@ async def admin_token(request):
     for s in list(app["sessions"]):
         s.kicked = True
         await s.ws.close(code=4004, message=b"token changed")
+    for ws in list(app["audio_sockets"]):
+        await ws.close(code=4004, message=b"token changed")
     return web.json_response({"token": app["token"]})
 
 
@@ -513,9 +693,16 @@ async def admin_stop(request):
 async def on_shutdown(app):
     for s in list(app["sessions"]):
         await s.ws.close(code=1001, message=b"server shutdown")
+    for ws in list(app["audio_sockets"]):
+        await ws.close(code=1001, message=b"server shutdown")
+
+
+async def on_startup(app):
+    await app["speaker"].restore_leftovers()
 
 
 async def on_cleanup(app):
+    await app["speaker"].restore_leftovers()
     loop = asyncio.get_running_loop()
     with contextlib.suppress(ConnectionClosedError, OSError):
         await loop.run_in_executor(app["input"], app["desktop"].restore_keymap)
@@ -661,6 +848,8 @@ def main():
     app["input"] = ThreadPoolExecutor(1, thread_name_prefix="input")
     app["guard"] = Guard()
     app["sessions"] = set()
+    app["audio_sockets"] = set()
+    app["speaker"] = LaptopSpeaker()
     app["events"] = deque(maxlen=50)
     url_cache = {"at": 0.0, "urls": None, "token": None}
 
@@ -674,6 +863,7 @@ def main():
     app.router.add_get("/", index)
     app.router.add_get("/manifest.webmanifest", manifest)
     app.router.add_get("/ws", ws_handler)
+    app.router.add_get("/audio", audio_handler)
     app.router.add_get("/admin", admin_page)
     app.router.add_get("/admin/api/state", admin_state)
     app.router.add_get("/admin/qr.svg", admin_qr)
@@ -684,6 +874,7 @@ def main():
     app.router.add_post("/admin/api/stop", admin_stop)
     app.router.add_static("/s", STATIC)
     app.on_response_prepare.append(no_cache)
+    app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
     app.on_cleanup.append(on_cleanup)
 

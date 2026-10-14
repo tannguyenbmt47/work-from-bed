@@ -6,6 +6,7 @@ from Xlib import X, XK, display
 from Xlib.ext import xtest
 
 XK.load_keysym_group("xf86")
+XK.load_keysym_group("xkb")  # ISO_Level3_Shift (AltGr)
 
 MODIFIERS = {"ctrl": "Control_L", "shift": "Shift_L", "alt": "Alt_L", "super": "Super_L"}
 CHAR_KEYS = {"\n": "Return", "\r": "Return", "\t": "Tab"}
